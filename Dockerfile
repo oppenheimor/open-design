@@ -47,8 +47,8 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 
-# Install SQLite runtime library needed by better-sqlite3 native addon
-RUN apt-get update && apt-get install -y --no-install-recommends libsqlite3-0
+# Install SQLite runtime lib + build tools so better-sqlite3 native addon rebuilds
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential libsqlite3-0
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
@@ -68,7 +68,7 @@ COPY --from=builder /app/pnpm-lock.yaml ./apps/daemon/pnpm-lock.yaml
 # Re-install daemon's transitive production deps (express, better-sqlite3, etc.)
 # that are missing because pnpm workspace isolation keeps them in package-local node_modules
 RUN npm install -g pnpm@${PNPM_VERSION} \
-    && pnpm install --no-frozen-lockfile --ignore-scripts --prod -r --filter "@open-design/daemon"
+    && pnpm install --no-frozen-lockfile --prod -r --filter "@open-design/daemon"
 
 EXPOSE 7456
 
