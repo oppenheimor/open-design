@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
 
+ARG PNPM_VERSION=10.33.2
+
 # ── Stage 1: Install deps ────────────────────────────────────────────────────
 FROM node:24-slim AS deps
 WORKDIR /app
@@ -7,15 +9,14 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/ ./packages/
 COPY apps/ ./apps/
-# Root-level assets needed at runtime
 COPY skills/ ./skills/
 COPY design-systems/ ./design-systems/
 COPY assets/ ./assets/
 COPY templates/ ./templates/
 COPY deploy/ ./deploy/
 
-RUN npm install -g pnpm@10.33.2 && \
-    pnpm install --frozen-lockfile --ignore-scripts
+RUN npm install -g pnpm@${PNPM_VERSION} \
+    && pnpm install --frozen-lockfile --ignore-scripts
 
 # ── Stage 2: Build ──────────────────────────────────────────────────────────
 FROM node:24-slim AS builder
@@ -24,27 +25,31 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app ./
 
-ENV NODE_ENV=production
-ENV OD_WEB_OUTPUT_MODE=server
-ENV OD_PORT=7456
+ENV NODE_ENV=production \
+    OD_WEB_OUTPUT_MODE=server \
+    OD_PORT=7456 \
+    PNPM_VERSION=10.33.2
 
-# Build workspace packages (needed by daemon/web)
-RUN pnpm --filter "@open-design/sidecar-proto" --filter "@open-design/platform" --filter "@open-design/sidecar" build
-RUN pnpm --filter "@open-design/contracts" build
-RUN pnpm --filter "@open-design/daemon" build
-RUN pnpm --filter "@open-design/web" build
+RUN npm install -g pnpm@${PNPM_VERSION} \
+    && pnpm --filter "@open-design/sidecar-proto" build \
+    && pnpm --filter "@open-design/platform" build \
+    && pnpm --filter "@open-design/sidecar" build \
+    && pnpm --filter "@open-design/contracts" build \
+    && pnpm --filter "@open-design/daemon" build \
+    && pnpm --filter "@open-design/web" build
 
 # ── Stage 3: Runtime ─────────────────────────────────────────────────────────
 FROM node:24-slim AS runtime
 
-ENV NODE_ENV=production
-ENV OD_WEB_OUTPUT_MODE=server
-ENV OD_PORT=7456
+ENV NODE_ENV=production \
+    OD_WEB_OUTPUT_MODE=server \
+    OD_PORT=7456 \
+    PNPM_VERSION=10.33.2
 
 WORKDIR /app
 
-RUN npm install -g pnpm@10.33.2 && \
-    pnpm install --frozen-lockfile --ignore-scripts --filter "@open-design/daemon"
+RUN npm install -g pnpm@${PNPM_VERSION} \
+    && pnpm install --frozen-lockfile --ignore-scripts --filter "@open-design/daemon"
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
