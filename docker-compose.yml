@@ -1,0 +1,34 @@
+# Docker compose for Open Design (SSR mode)
+# Usage:
+#   1. cp .env.example .env  and fill in your values
+#   2. docker compose up -d
+
+version: '3.9'
+
+services:
+  open-design:
+    image: ghcr.io/${GITHUB_REPO:-nexu-io}/open-design:${IMAGE_TAG:-latest}
+    container_name: open-design
+    restart: unless-stopped
+    ports:
+      - "7456:7456"
+    environment:
+      NODE_ENV: production
+      OD_PORT: 7456
+      OD_WEB_OUTPUT_MODE: server
+      # BYOK — paste your OpenAI-compatible baseUrl + apiKey from Settings UI
+      # ANTHROPIC_API_KEY: sk-ant-...
+      # OPENAI_API_KEY: sk-...
+    volumes:
+      # Persist SQLite DB and project files across container restarts
+      - od-data:/app/.od
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7456/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  od-data:
+    driver: local
