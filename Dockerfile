@@ -60,11 +60,12 @@ COPY --from=builder /app/design-systems ./design-systems
 COPY --from=builder /app/assets ./assets
 COPY --from=builder /app/templates ./templates
 COPY --from=builder /app/deploy ./deploy
+COPY --from=builder /app/pnpm-lock.yaml ./apps/daemon/pnpm-lock.yaml
 
 # Re-install daemon's transitive production deps (express, better-sqlite3, etc.)
 # that are missing because pnpm workspace isolation keeps them in package-local node_modules
 RUN npm install -g pnpm@${PNPM_VERSION} \
-    && pnpm install --frozen-lockfile --ignore-scripts --prod -r --filter "@open-design/daemon"
+    && pnpm install --no-frozen-lockfile --ignore-scripts --prod -r --filter "@open-design/daemon"
 
 EXPOSE 7456
 
