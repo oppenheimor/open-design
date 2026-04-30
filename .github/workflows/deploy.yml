@@ -84,10 +84,10 @@ jobs:
               sleep 2
             done
             echo "Daemon ready"
-            # Use the nginx already installed on the server (avoids Docker Hub access from China)
+            # Use the server's apt-installed nginx (avoids Docker Hub access from China)
             mkdir -p /tmp/od-deploy
             docker cp open-design:/app/deploy/nginx/nginx.conf /tmp/od-deploy/nginx.conf
-            service nginx stop || true
-            nginx -c /tmp/od-deploy/nginx.conf
-            service nginx start
+            sudo sed -i 's|/var/log/nginx/error.log|/tmp/od-deploy/nginx-error.log|g; s|/var/log/nginx/access.log|/tmp/od-deploy/nginx-access.log|g; s|/run/nginx.pid|/tmp/od-deploy/nginx.pid|g' /tmp/od-deploy/nginx.conf
+            sudo nginx -s stop 2>/dev/null || true
+            sudo nginx -c /tmp/od-deploy/nginx.conf
             echo "Done"

@@ -47,6 +47,9 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 
+# Install SQLite dev headers needed for better-sqlite3 native addon rebuild
+RUN apt-get install -y --no-install-recommends libsqlite3-dev
+
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps/daemon/dist ./apps/daemon/dist
