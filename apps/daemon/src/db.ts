@@ -99,6 +99,27 @@ function migrate(db) {
 
     CREATE INDEX IF NOT EXISTS idx_tabs_project
       ON tabs(project_id, position);
+
+    CREATE TABLE IF NOT EXISTS deployments (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      file_name TEXT NOT NULL,
+      provider_id TEXT NOT NULL,
+      url TEXT NOT NULL,
+      deployment_id TEXT,
+      deployment_count INTEGER NOT NULL DEFAULT 1,
+      target TEXT NOT NULL DEFAULT 'preview',
+      status TEXT NOT NULL DEFAULT 'ready',
+      status_message TEXT,
+      reachable_at INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      UNIQUE(project_id, file_name, provider_id),
+      FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_deployments_project
+      ON deployments(project_id, updated_at DESC);
   `);
   // Forward-compatible column add for databases created before metadata_json.
   // SQLite has no IF NOT EXISTS for ALTER, so we check pragma_table_info.
@@ -122,6 +143,135 @@ function migrate(db) {
   if (!messageCols.some((c) => c.name === 'last_run_event_id')) {
     db.exec(`ALTER TABLE messages ADD COLUMN last_run_event_id TEXT`);
   }
+  const deploymentCols = db.prepare(`PRAGMA table_info(deployments)`).all();
+  if (!deploymentCols.some((c) => c.name === 'status')) {
+    db.exec(`ALTER TABLE deployments ADD COLUMN status TEXT NOT NULL DEFAULT 'ready'`);
+  }
+  if (!deploymentCols.some((c) => c.name === 'status_message')) {
+    db.exec(`ALTER TABLE deployments ADD COLUMN status_message TEXT`);
+  }
+  if (!deploymentCols.some((c) => c.name === 'reachable_at')) {
+    db.exec(`ALTER TABLE deployments ADD COLUMN reachable_at INTEGER`);
+  }
+}
+
+// ---------- deployments ----------
+
+const DEPLOYMENT_COLS = `id, project_id AS projectId, file_name AS fileName,
+  provider_id AS providerId, url, deployment_id AS deploymentId,
+  deployment_count AS deploymentCount, target, status,
+  status_message AS statusMessage, reachable_at AS reachableAt,
+  created_at AS createdAt, updated_at AS updatedAt`;
+
+export function listDeployments(db, projectId) {
+  return db
+    .prepare(
+      `SELECT ${DEPLOYMENT_COLS}
+         FROM deployments
+        WHERE project_id = ?
+        ORDER BY updated_at DESC`,
+    )
+    .all(projectId)
+    .map(normalizeDeployment);
+}
+
+export function getDeployment(db, projectId, fileName, providerId) {
+  const row = db
+    .prepare(
+      `SELECT ${DEPLOYMENT_COLS}
+         FROM deployments
+        WHERE project_id = ? AND file_name = ? AND provider_id = ?`,
+    )
+    .get(projectId, fileName, providerId);
+  return row ? normalizeDeployment(row) : null;
+}
+
+export function getDeploymentById(db, projectId, id) {
+  const row = db
+    .prepare(
+      `SELECT ${DEPLOYMENT_COLS}
+         FROM deployments
+        WHERE project_id = ? AND id = ?`,
+    )
+    .get(projectId, id);
+  return row ? normalizeDeployment(row) : null;
+}
+
+export function upsertDeployment(db, deployment) {
+  const existing = getDeployment(
+    db,
+    deployment.projectId,
+    deployment.fileName,
+    deployment.providerId,
+  );
+  const now = Date.now();
+  const next = {
+    id: existing?.id ?? deployment.id,
+    projectId: deployment.projectId,
+    fileName: deployment.fileName,
+    providerId: deployment.providerId,
+    url: deployment.url,
+    deploymentId: deployment.deploymentId ?? null,
+    deploymentCount:
+      typeof deployment.deploymentCount === 'number'
+        ? deployment.deploymentCount
+        : (existing?.deploymentCount ?? 0) + 1,
+    target: deployment.target ?? 'preview',
+    status: deployment.status ?? existing?.status ?? 'ready',
+    statusMessage: deployment.statusMessage ?? null,
+    reachableAt: deployment.reachableAt ?? null,
+    createdAt: existing?.createdAt ?? deployment.createdAt ?? now,
+    updatedAt: deployment.updatedAt ?? now,
+  };
+  db.prepare(
+    `INSERT INTO deployments
+       (id, project_id, file_name, provider_id, url, deployment_id,
+        deployment_count, target, status, status_message, reachable_at,
+        created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(project_id, file_name, provider_id) DO UPDATE SET
+       url = excluded.url,
+       deployment_id = excluded.deployment_id,
+       deployment_count = excluded.deployment_count,
+       target = excluded.target,
+       status = excluded.status,
+       status_message = excluded.status_message,
+       reachable_at = excluded.reachable_at,
+       updated_at = excluded.updated_at`,
+  ).run(
+    next.id,
+    next.projectId,
+    next.fileName,
+    next.providerId,
+    next.url,
+    next.deploymentId,
+    next.deploymentCount,
+    next.target,
+    next.status,
+    next.statusMessage,
+    next.reachableAt,
+    next.createdAt,
+    next.updatedAt,
+  );
+  return getDeployment(db, next.projectId, next.fileName, next.providerId);
+}
+
+function normalizeDeployment(row) {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    fileName: row.fileName,
+    providerId: row.providerId,
+    url: row.url,
+    deploymentId: row.deploymentId ?? undefined,
+    deploymentCount: Number(row.deploymentCount ?? 1),
+    target: 'preview',
+    status: row.status || 'ready',
+    statusMessage: row.statusMessage ?? undefined,
+    reachableAt: row.reachableAt == null ? undefined : Number(row.reachableAt),
+    createdAt: Number(row.createdAt),
+    updatedAt: Number(row.updatedAt),
+  };
 }
 
 // ---------- projects ----------

@@ -106,3 +106,56 @@ export interface UpdateConversationRequest {
 export interface MessagesResponse {
   messages: ChatMessage[];
 }
+
+export type DeployProviderId = 'vercel-self';
+export type DeploymentStatus =
+  | 'deploying'
+  | 'preparing-link'
+  | 'ready'
+  | 'link-delayed'
+  | 'protected'
+  | 'failed';
+
+export interface DeployConfigResponse {
+  providerId: DeployProviderId;
+  configured: boolean;
+  tokenMask: string;
+  teamId: string;
+  teamSlug: string;
+  target: 'preview';
+}
+
+export interface UpdateDeployConfigRequest {
+  token?: string;
+  teamId?: string;
+  teamSlug?: string;
+}
+
+export interface DeploymentInfo {
+  id: string;
+  projectId: string;
+  fileName: string;
+  providerId: DeployProviderId;
+  url: string;
+  deploymentId?: string;
+  deploymentCount: number;
+  target: 'preview';
+  status: DeploymentStatus;
+  statusMessage?: string;
+  reachableAt?: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ProjectDeploymentsResponse {
+  deployments: DeploymentInfo[];
+}
+
+export interface DeployProjectFileRequest {
+  fileName: string;
+  providerId?: DeployProviderId;
+}
+
+export interface DeployProjectFileResponse extends DeploymentInfo {}
+
+export interface CheckDeploymentLinkResponse extends DeploymentInfo {}

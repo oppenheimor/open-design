@@ -431,6 +431,35 @@ export const ptBR: Dict = {
   'fileViewer.templateNameDefault': 'Template sem título',
   'fileViewer.templateDescPrompt':
     'Descrição curta (opcional — o que torna este template útil?)',
+  'fileViewer.deployToVercel': 'Deploy to Vercel',
+  'fileViewer.redeployToVercel': 'Redeploy',
+  'fileViewer.deployingToVercel': 'Deploying to Vercel…',
+  'fileViewer.preparingPublicLink': 'Preparing public link…',
+  'fileViewer.copyDeployLink': 'Copy link',
+  'fileViewer.deployModalTitle': 'Deploy to Vercel',
+  'fileViewer.deployModalSubtitle':
+    'Deploy this HTML artifact as a Vercel Preview using your own account.',
+  'fileViewer.vercelToken': 'Vercel token',
+  'fileViewer.vercelTokenGetLink': 'Get Vercel token',
+  'fileViewer.vercelTokenPlaceholder': 'Paste your Vercel token',
+  'fileViewer.vercelTokenReuseHint':
+    'Saved token will be used. Enter a new token to replace it.',
+  'fileViewer.vercelTokenRequired': 'Enter and save a Vercel token first.',
+  'fileViewer.vercelTeamId': 'Team ID',
+  'fileViewer.vercelTeamSlug': 'Team slug',
+  'fileViewer.optional': 'Optional',
+  'fileViewer.vercelPreviewOnly': 'Deploys are Preview-only for now.',
+  'fileViewer.savingConfig': 'Saving…',
+  'fileViewer.deployConfigSaveFailed': 'Could not save Vercel settings.',
+  'fileViewer.deployFailed': 'Deploy failed. Check Vercel settings and try again.',
+  'fileViewer.deployResultLabel': 'Deployed URL',
+  'fileViewer.deployLinkPreparingLabel': 'Public link pending',
+  'fileViewer.deployLinkDelayed':
+    'Your site is deployed. Vercel is still preparing the public link.',
+  'fileViewer.deployLinkProtectedLabel': 'Vercel protection enabled',
+  'fileViewer.deployLinkProtected':
+    'Your site deployed, but Vercel is requiring authentication for this preview link. Disable Deployment Protection or use a custom domain.',
+  'fileViewer.retryLink': 'Retry now',
 
   'questionForm.submit': 'Enviar',
   'questionForm.skip': 'Pular',

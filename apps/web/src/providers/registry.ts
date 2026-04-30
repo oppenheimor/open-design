@@ -1,11 +1,15 @@
 import type {
   AgentInfo,
   ChatAttachment,
+  DeployConfigResponse,
+  DeployProjectFileResponse,
   DesignSystemDetail,
   DesignSystemSummary,
+  ProjectDeploymentsResponse,
   ProjectFile,
   SkillDetail,
   SkillSummary,
+  UpdateDeployConfigRequest,
 } from '../types';
 import type { ArtifactManifest } from '../artifacts/types';
 
@@ -79,6 +83,80 @@ export async function fetchSkillExample(id: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+export async function fetchDeployConfig(): Promise<DeployConfigResponse | null> {
+  try {
+    const resp = await fetch('/api/deploy/config');
+    if (!resp.ok) return null;
+    return (await resp.json()) as DeployConfigResponse;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateDeployConfig(
+  input: UpdateDeployConfigRequest,
+): Promise<DeployConfigResponse | null> {
+  try {
+    const resp = await fetch('/api/deploy/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    if (!resp.ok) return null;
+    return (await resp.json()) as DeployConfigResponse;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchProjectDeployments(
+  projectId: string,
+): Promise<ProjectDeploymentsResponse['deployments']> {
+  try {
+    const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}/deployments`);
+    if (!resp.ok) return [];
+    const json = (await resp.json()) as ProjectDeploymentsResponse;
+    return json.deployments ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function deployProjectFile(
+  projectId: string,
+  fileName: string,
+): Promise<DeployProjectFileResponse> {
+  const resp = await fetch(`/api/projects/${encodeURIComponent(projectId)}/deploy`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileName, providerId: 'vercel-self' }),
+  });
+  if (!resp.ok) {
+    const payload = (await resp.json().catch(() => null)) as
+      | { error?: { message?: string }; message?: string }
+      | null;
+    throw new Error(payload?.error?.message || payload?.message || `Deploy failed (${resp.status})`);
+  }
+  return (await resp.json()) as DeployProjectFileResponse;
+}
+
+export async function checkDeploymentLink(
+  projectId: string,
+  deploymentId: string,
+): Promise<DeployProjectFileResponse> {
+  const resp = await fetch(
+    `/api/projects/${encodeURIComponent(projectId)}/deployments/${encodeURIComponent(deploymentId)}/check-link`,
+    { method: 'POST' },
+  );
+  if (!resp.ok) {
+    const payload = (await resp.json().catch(() => null)) as
+      | { error?: { message?: string }; message?: string }
+      | null;
+    throw new Error(payload?.error?.message || payload?.message || `Link check failed (${resp.status})`);
+  }
+  return (await resp.json()) as DeployProjectFileResponse;
 }
 
 // Project files — all paths are scoped under .od/projects/<id>/ on disk.

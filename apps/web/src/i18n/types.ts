@@ -439,6 +439,31 @@ export interface Dict {
   'fileViewer.templateNamePrompt': string;
   'fileViewer.templateNameDefault': string;
   'fileViewer.templateDescPrompt': string;
+  'fileViewer.deployToVercel': string;
+  'fileViewer.redeployToVercel': string;
+  'fileViewer.deployingToVercel': string;
+  'fileViewer.preparingPublicLink': string;
+  'fileViewer.copyDeployLink': string;
+  'fileViewer.deployModalTitle': string;
+  'fileViewer.deployModalSubtitle': string;
+  'fileViewer.vercelToken': string;
+  'fileViewer.vercelTokenGetLink': string;
+  'fileViewer.vercelTokenPlaceholder': string;
+  'fileViewer.vercelTokenReuseHint': string;
+  'fileViewer.vercelTokenRequired': string;
+  'fileViewer.vercelTeamId': string;
+  'fileViewer.vercelTeamSlug': string;
+  'fileViewer.optional': string;
+  'fileViewer.vercelPreviewOnly': string;
+  'fileViewer.savingConfig': string;
+  'fileViewer.deployConfigSaveFailed': string;
+  'fileViewer.deployFailed': string;
+  'fileViewer.deployResultLabel': string;
+  'fileViewer.deployLinkPreparingLabel': string;
+  'fileViewer.deployLinkDelayed': string;
+  'fileViewer.deployLinkProtectedLabel': string;
+  'fileViewer.deployLinkProtected': string;
+  'fileViewer.retryLink': string;
 
   // Question form (assistant question UX)
   'questionForm.submit': string;

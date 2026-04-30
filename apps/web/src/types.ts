@@ -3,8 +3,11 @@ import type {
   ChatAttachment,
   ChatMessage,
   Conversation,
+  DeployConfigResponse,
+  DeployProjectFileResponse,
   DesignSystemDetail,
   DesignSystemSummary,
+  ProjectDeploymentsResponse,
   PersistedAgentEvent,
   Project,
   ProjectDisplayStatus,
@@ -15,6 +18,7 @@ import type {
   ProjectTemplate,
   SkillDetail,
   SkillSummary,
+  UpdateDeployConfigRequest,
 } from '@open-design/contracts';
 
 export type ExecMode = 'daemon' | 'api';
@@ -72,8 +76,11 @@ export interface AgentModelOption {
 export type {
   AgentInfo,
   Conversation,
+  DeployConfigResponse,
+  DeployProjectFileResponse,
   DesignSystemDetail,
   DesignSystemSummary,
+  ProjectDeploymentsResponse,
   Project,
   ProjectDisplayStatus,
   ProjectFile,
@@ -83,6 +90,7 @@ export type {
   ProjectTemplate,
   SkillDetail,
   SkillSummary,
+  UpdateDeployConfigRequest,
 };
 
 export interface OpenTabsState {

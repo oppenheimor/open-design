@@ -3695,6 +3695,125 @@ code {
 .share-menu-icon { flex: 0 0 auto; width: 18px; text-align: center; font-size: 13px; }
 .share-menu-divider { height: 1px; background: var(--border); margin: 4px 6px; }
 
+.button-like {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+}
+.button-like:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.deploy-modal {
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+.deploy-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 18px;
+}
+.field-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.field-label-row a {
+  color: var(--accent);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.deploy-form input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 12px;
+  background: var(--bg-panel);
+  color: var(--text);
+  font: inherit;
+}
+.deploy-config-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.deploy-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.deploy-field-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.deploy-error {
+  margin: 0;
+  color: var(--red);
+}
+.deploy-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+}
+.deploy-result.ready {
+  border: 1px solid color-mix(in srgb, var(--green) 35%, var(--border));
+  background: color-mix(in srgb, var(--green) 10%, var(--bg-panel));
+}
+.deploy-result.delayed {
+  border: 1px solid color-mix(in srgb, #b7791f 42%, var(--border));
+  background: color-mix(in srgb, #b7791f 10%, var(--bg-panel));
+}
+.deploy-result.protected {
+  border: 1px solid color-mix(in srgb, #c96442 48%, var(--border));
+  background: color-mix(in srgb, #c96442 10%, var(--bg-panel));
+}
+.deploy-result-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.deploy-result.delayed .deploy-result-label {
+  color: #9a5b12;
+}
+.deploy-result.protected .deploy-result-label {
+  color: #a34828;
+}
+.deploy-result-message {
+  margin: 0;
+  color: var(--muted);
+}
+.deploy-result a {
+  overflow-wrap: anywhere;
+}
+.deploy-result-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+.ghost-link.disabled,
+.ghost-link[aria-disabled='true'] {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
 .present-overlay {
   position: fixed;
   inset: 0;
