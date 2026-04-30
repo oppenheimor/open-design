@@ -97,12 +97,12 @@ export function App() {
           void syncMediaProvidersToDaemon(next.mediaProviders);
         }
 
-        // Pop the onboarding modal only on the first run. Once the user has
-        // saved or skipped past it once, we trust their stored config and
-        // let them re-open Settings explicitly via the env pill.
+        // Do not block the creation form with first-run onboarding. Hosted
+        // deployments may have no local CLIs installed, and the modal backdrop
+        // makes the primary Create button look broken. Users can still open
+        // Settings explicitly from the environment pill.
         if (!next.onboardingCompleted) {
-          setSettingsWelcome(true);
-          setSettingsOpen(true);
+          next.onboardingCompleted = true;
         }
         return next;
       });
