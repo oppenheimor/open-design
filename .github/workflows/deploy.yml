@@ -42,6 +42,18 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Make GHCR image public so the server can pull without auth
+      - name: Make image public
+        run: |
+          # Get the package version ID for the SHA tag
+          VERSION_ID=$(gh api \
+            "repos/${{ github.repository }}/packages/container/${{ github.event.repository.name }}/versions" \
+            --jq '.[] | select(.metadata.container.tags[0] == "${{ github.sha }}") | .id')
+          gh api \
+            --method PATCH \
+            "repos/${{ github.repository }}/packages/container/${{ github.event.repository.name }}/versions/$VERSION_ID" \
+            -f visibility=public
+
     outputs:
       sha_tag: ghcr.io/${{ github.repository }}:${{ github.sha }}
       latest_tag: ghcr.io/${{ github.repository }}:latest
