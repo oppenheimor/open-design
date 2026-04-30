@@ -50,6 +50,7 @@ WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps/daemon/dist ./apps/daemon/dist
+COPY --from=builder /app/apps/daemon/package.json ./apps/daemon/package.json
 COPY --from=builder /app/apps/web/.next ./apps/web/.next
 COPY --from=builder /app/apps/web/public ./apps/web/public
 COPY --from=builder /app/apps/web/next.config.ts ./apps/web/next.config.ts
@@ -59,6 +60,11 @@ COPY --from=builder /app/design-systems ./design-systems
 COPY --from=builder /app/assets ./assets
 COPY --from=builder /app/templates ./templates
 COPY --from=builder /app/deploy ./deploy
+
+# Re-install daemon's transitive production deps (express, better-sqlite3, etc.)
+# that are missing because pnpm workspace isolation keeps them in package-local node_modules
+RUN npm install -g pnpm@${PNPM_VERSION} \
+    && pnpm install --frozen-lockfile --ignore-scripts --prod -r --filter "@open-design/daemon"
 
 EXPOSE 7456
 
