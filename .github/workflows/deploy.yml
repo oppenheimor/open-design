@@ -52,52 +52,104 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IMAGE_TAG: ${{ needs.build.outputs.sha_tag }}
-      GHCR_USER: ${{ github.actor }}
-      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN || secrets.DOCKER_REGISTRY_PASSWORD }}
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_SSH_USER: ${{ secrets.SERVER_SSH_USER }}
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      SERVER_SSH_PORT: ${{ secrets.SERVER_SSH_PORT || '22' }}
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+      - uses: docker/login-action@v3
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_SSH_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          command_timeout: 30m
-          envs: IMAGE_TAG,GHCR_USER,GHCR_TOKEN
-          script: |
-            set -euo pipefail
-            # Login to GHCR so the server can pull the private image
-            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-            echo "Pulling $IMAGE_TAG"
-            docker pull "$IMAGE_TAG"
-            docker rm -f open-design 2>/dev/null || true
-            docker run -d \
-              --name open-design \
-              --restart unless-stopped \
-              -p 7456:7456 \
-              -v od-data:/app/.od \
-              -e NODE_ENV=production \
-              -e OD_HOST=0.0.0.0 \
-              -e OD_PORT=7456 \
-              "$IMAGE_TAG"
-            healthy=0
-            for i in $(seq 1 30); do
-              if curl -sf http://127.0.0.1:7456/api/health; then
-                healthy=1
-                break
-              fi
-              sleep 2
-            done
-            if [ "$healthy" -ne 1 ]; then
-              echo "Open Design failed health check" >&2
-              docker logs --tail 200 open-design >&2 || true
-              exit 1
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.DOCKER_REGISTRY_PASSWORD }}
+
+      - name: Pull and package image
+        run: |
+          set -euo pipefail
+          docker pull "$IMAGE_TAG"
+          docker save "$IMAGE_TAG" | gzip -1 > /tmp/open-design-image.tar.gz
+
+      - name: Configure SSH
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/open_design_deploy_key
+          chmod 600 ~/.ssh/open_design_deploy_key
+          ssh-keyscan -p "$SERVER_SSH_PORT" "$SERVER_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload image to server
+        run: |
+          set -euo pipefail
+          scp -P "$SERVER_SSH_PORT" \
+            -i ~/.ssh/open_design_deploy_key \
+            /tmp/open-design-image.tar.gz \
+            "$SERVER_SSH_USER@$SERVER_HOST:/tmp/open-design-image.tar.gz"
+
+      - name: Deploy loaded image
+        run: |
+          set -euo pipefail
+          ssh -p "$SERVER_SSH_PORT" \
+            -i ~/.ssh/open_design_deploy_key \
+            "$SERVER_SSH_USER@$SERVER_HOST" \
+            "IMAGE_TAG='$IMAGE_TAG' bash -s" <<'REMOTE'
+          set -euo pipefail
+          APP_NAME=open-design
+          NEXT_NAME=open-design-next
+          APP_PORT=7456
+          NEXT_PORT=7457
+          NEXT_VOLUME=open-design-next-data
+
+          docker load -i /tmp/open-design-image.tar.gz
+          rm -f /tmp/open-design-image.tar.gz
+
+          docker rm -f "$NEXT_NAME" 2>/dev/null || true
+          docker volume rm "$NEXT_VOLUME" 2>/dev/null || true
+          docker volume create "$NEXT_VOLUME" >/dev/null
+          docker run -d \
+            --name "$NEXT_NAME" \
+            -p "$NEXT_PORT:7456" \
+            -v "$NEXT_VOLUME:/app/.od" \
+            -e NODE_ENV=production \
+            -e OD_HOST=0.0.0.0 \
+            -e OD_PORT=7456 \
+            "$IMAGE_TAG"
+
+          healthy=0
+          for i in $(seq 1 30); do
+            if curl -sf "http://127.0.0.1:$NEXT_PORT/api/health"; then
+              healthy=1
+              break
             fi
-            echo "Daemon ready"
-            # Use the server's apt-installed nginx (avoids Docker Hub access from China)
-            mkdir -p /tmp/od-deploy
-            docker cp open-design:/app/deploy/nginx/nginx.conf /tmp/od-deploy/nginx.conf
-            sudo sed -i 's|/var/log/nginx/error.log|/tmp/od-deploy/nginx-error.log|g; s|/var/log/nginx/access.log|/tmp/od-deploy/nginx-access.log|g; s|/run/nginx.pid|/tmp/od-deploy/nginx.pid|g' /tmp/od-deploy/nginx.conf
-            # Kill any process holding port 80 (nginx from previous deploy still bound after restart loop)
-            sudo fuser -k 80/tcp 2>/dev/null || true
-            sudo nginx -c /tmp/od-deploy/nginx.conf
-            echo "Done"
+            sleep 2
+          done
+          if [ "$healthy" -ne 1 ]; then
+            echo "Open Design failed health check" >&2
+            docker logs --tail 200 "$NEXT_NAME" >&2 || true
+            docker rm -f "$NEXT_NAME" 2>/dev/null || true
+            docker volume rm "$NEXT_VOLUME" 2>/dev/null || true
+            exit 1
+          fi
+          echo "Daemon ready"
+
+          docker rm -f "$APP_NAME" 2>/dev/null || true
+          docker run -d \
+            --name "$APP_NAME" \
+            --restart unless-stopped \
+            -p "$APP_PORT:7456" \
+            -v od-data:/app/.od \
+            -e NODE_ENV=production \
+            -e OD_HOST=0.0.0.0 \
+            -e OD_PORT=7456 \
+            "$IMAGE_TAG"
+          docker rm -f "$NEXT_NAME" 2>/dev/null || true
+          docker volume rm "$NEXT_VOLUME" 2>/dev/null || true
+
+          # Use the server's apt-installed nginx (avoids Docker Hub access from China)
+          mkdir -p /tmp/od-deploy
+          docker cp "$APP_NAME":/app/deploy/nginx/nginx.conf /tmp/od-deploy/nginx.conf
+          sudo sed -i 's|/var/log/nginx/error.log|/tmp/od-deploy/nginx-error.log|g; s|/var/log/nginx/access.log|/tmp/od-deploy/nginx-access.log|g; s|/run/nginx.pid|/tmp/od-deploy/nginx.pid|g' /tmp/od-deploy/nginx.conf
+          # Kill any process holding port 80 (nginx from previous deploy still bound after restart loop)
+          sudo fuser -k 80/tcp 2>/dev/null || true
+          sudo nginx -c /tmp/od-deploy/nginx.conf
+          echo "Done"
+          REMOTE
