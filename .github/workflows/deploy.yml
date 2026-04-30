@@ -58,7 +58,7 @@ jobs:
           images: ${{ env.IMAGE_NAME }}
           tags: |
             type=sha
-            type=raw,value=latest,enable={{ is_default_branch }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build & push
         uses: docker/build-push-action@v6
@@ -81,6 +81,8 @@ jobs:
     environment:
       name: production
       url: http://${{ secrets.SERVER_HOST }}
+    env:
+      IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
     steps:
       - name: Deploy image to server
         uses: appleboy/ssh-action@v1
@@ -91,7 +93,6 @@ jobs:
           envs: IMAGE_TAG
           script: |
             set -euo pipefail
-            IMAGE_TAG="$IMAGE_TAG"
             echo "Pulling $IMAGE_TAG …"
             docker pull "$IMAGE_TAG"
 
@@ -118,17 +119,17 @@ jobs:
             echo "✓ Daemon healthy"
 
             # ── Nginx ────────────────────────────────────────────────────────
-            # Copy nginx.conf from the cloned repo (actions/checkout puts it
-            # at ~/open-design on the runner; we re-copy it to the server here)
-            mkdir -p ~/open-design/deploy/nginx
-            # nginx.conf is baked into the image at /app/deploy/nginx/nginx.conf
+            # nginx.conf lives at /app/deploy/nginx/nginx.conf inside the image.
+            # Copy it to the host so the nginx container can mount it.
+            mkdir -p /tmp/open-design-deploy
+            docker cp open-design:/app/deploy/nginx/nginx.conf /tmp/open-design-deploy/nginx.conf
             docker rm -f nginx 2>/dev/null || true
             docker run -d \
               --name nginx \
               --restart unless-stopped \
               -p 80:80 \
               -p 443:443 \
-              -v /app/deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
+              -v /tmp/open-design-deploy/nginx.conf:/etc/nginx/nginx.conf:ro \
               nginx:alpine
             echo "✓ Nginx started"
 
