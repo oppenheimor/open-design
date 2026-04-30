@@ -32,8 +32,8 @@ docker run -d \
   -p 7456:7456 \
   -v od-data:/app/.od \
   -e NODE_ENV=production \
+  -e OD_HOST=0.0.0.0 \
   -e OD_PORT=7456 \
-  -e OD_WEB_OUTPUT_MODE=server \
   "$IMAGE"
 
 # ── Health check ────────────────────────────────────────────────────────────────

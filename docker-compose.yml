@@ -14,8 +14,8 @@ services:
       - "7456:7456"
     environment:
       NODE_ENV: production
+      OD_HOST: 0.0.0.0
       OD_PORT: 7456
-      OD_WEB_OUTPUT_MODE: server
       # BYOK — paste your OpenAI-compatible baseUrl + apiKey from Settings UI
       # ANTHROPIC_API_KEY: sk-ant-...
       # OPENAI_API_KEY: sk-...

@@ -21,7 +21,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+          password: ${{ github.token }}
 
       - id: meta
         uses: docker/metadata-action@v5
@@ -53,7 +53,7 @@ jobs:
     env:
       IMAGE_TAG: ${{ needs.build.outputs.sha_tag }}
       GHCR_USER: ${{ github.actor }}
-      GHCR_TOKEN: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN || secrets.DOCKER_REGISTRY_PASSWORD }}
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
@@ -76,13 +76,22 @@ jobs:
               -p 7456:7456 \
               -v od-data:/app/.od \
               -e NODE_ENV=production \
+              -e OD_HOST=0.0.0.0 \
               -e OD_PORT=7456 \
-              -e OD_WEB_OUTPUT_MODE=server \
               "$IMAGE_TAG"
+            healthy=0
             for i in $(seq 1 30); do
-              curl -sf http://127.0.0.1:7456/api/health && break
+              if curl -sf http://127.0.0.1:7456/api/health; then
+                healthy=1
+                break
+              fi
               sleep 2
             done
+            if [ "$healthy" -ne 1 ]; then
+              echo "Open Design failed health check" >&2
+              docker logs --tail 200 open-design >&2 || true
+              exit 1
+            fi
             echo "Daemon ready"
             # Use the server's apt-installed nginx (avoids Docker Hub access from China)
             mkdir -p /tmp/od-deploy

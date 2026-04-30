@@ -458,6 +458,7 @@ export async function startServer({ port = 7456, returnServer = false } = {}) {
   const app = express();
   app.use(express.json({ limit: '4mb' }));
   const db = openDatabase(PROJECT_ROOT, { dataDir: RUNTIME_DATA_DIR });
+  const host = process.env.OD_HOST || '127.0.0.1';
 
   if (process.env.OD_CODEX_DISABLE_PLUGINS === '1') {
     console.log('[od] Codex plugins disabled via OD_CODEX_DISABLE_PLUGINS=1');
@@ -2104,10 +2105,10 @@ export async function startServer({ port = 7456, returnServer = false } = {}) {
   }
 
   return new Promise((resolve) => {
-    const server = app.listen(port, '127.0.0.1', () => {
+    const server = app.listen(port, host, () => {
       const address = server.address();
       const actualPort = typeof address === 'object' && address ? address.port : port;
-      const url = `http://127.0.0.1:${actualPort}`;
+      const url = `http://${host}:${actualPort}`;
       resolve(returnServer ? { url, server } : url);
     });
   });
