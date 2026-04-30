@@ -35,20 +35,23 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:latest
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
     outputs:
-      image_tag: ${{ steps.meta.outputs.tags }}
+      sha_tag: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      latest_tag: ghcr.io/${{ github.repository }}:latest
 
   deploy:
     name: Deploy to Server
     needs: build
     runs-on: ubuntu-latest
     env:
-      IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+      IMAGE_TAG: ${{ needs.build.outputs.sha_tag }}
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
