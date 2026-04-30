@@ -47,9 +47,6 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 
-RUN npm install -g pnpm@${PNPM_VERSION} \
-    && pnpm install --frozen-lockfile --ignore-scripts --filter "@open-design/daemon"
-
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps/daemon/dist ./apps/daemon/dist
