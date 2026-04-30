@@ -34,7 +34,6 @@ RUN npm install -g pnpm@${PNPM_VERSION} \
     && pnpm --filter "@open-design/sidecar-proto" build \
     && pnpm --filter "@open-design/platform" build \
     && pnpm --filter "@open-design/sidecar" build \
-    && pnpm --filter "@open-design/contracts" build \
     && pnpm --filter "@open-design/daemon" build \
     && pnpm --filter "@open-design/web" build
 
