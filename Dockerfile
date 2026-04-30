@@ -61,6 +61,7 @@ RUN apt-get update \
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/tools ./tools
+COPY --from=builder /app/apps/daemon/node_modules ./apps/daemon/node_modules
 COPY --from=builder /app/apps/daemon/dist ./apps/daemon/dist
 COPY --from=builder /app/apps/daemon/package.json ./apps/daemon/package.json
 COPY --from=builder /app/apps/web/out ./apps/web/out
