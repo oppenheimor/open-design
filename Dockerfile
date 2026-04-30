@@ -14,6 +14,8 @@ RUN apt-get update \
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/ ./packages/
 COPY apps/ ./apps/
+COPY tools/ ./tools/
+COPY scripts/ ./scripts/
 COPY skills/ ./skills/
 COPY design-systems/ ./design-systems/
 COPY prompt-templates/ ./prompt-templates/
@@ -58,6 +60,7 @@ RUN apt-get update \
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/tools ./tools
 COPY --from=builder /app/apps/daemon/dist ./apps/daemon/dist
 COPY --from=builder /app/apps/daemon/package.json ./apps/daemon/package.json
 COPY --from=builder /app/apps/web/out ./apps/web/out
