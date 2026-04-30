@@ -88,6 +88,7 @@ jobs:
             mkdir -p /tmp/od-deploy
             docker cp open-design:/app/deploy/nginx/nginx.conf /tmp/od-deploy/nginx.conf
             sudo sed -i 's|/var/log/nginx/error.log|/tmp/od-deploy/nginx-error.log|g; s|/var/log/nginx/access.log|/tmp/od-deploy/nginx-access.log|g; s|/run/nginx.pid|/tmp/od-deploy/nginx.pid|g' /tmp/od-deploy/nginx.conf
-            sudo nginx -s stop 2>/dev/null || true
+            # Kill any process holding port 80 (nginx from previous deploy still bound after restart loop)
+            sudo fuser -k 80/tcp 2>/dev/null || true
             sudo nginx -c /tmp/od-deploy/nginx.conf
             echo "Done"
