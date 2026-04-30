@@ -18,6 +18,7 @@ import {
 import { composeSystemPrompt } from '@open-design/contracts';
 import { navigate } from '../router';
 import { agentDisplayName } from '../utils/agentLabels';
+import { createClientId } from '../utils/uuid';
 import type { TodoItem } from '../runtime/todos';
 import {
   createConversation,
@@ -576,7 +577,7 @@ export function ProjectView({
       setError(null);
       const startedAt = Date.now();
       const userMsg: ChatMessage = {
-        id: crypto.randomUUID(),
+        id: createClientId(),
         role: 'user',
         content: prompt,
         attachments: attachments.length > 0 ? attachments : undefined,
@@ -591,7 +592,7 @@ export function ProjectView({
         config.mode === 'daemon'
           ? assistantAgentDisplayName(config.agentId, selectedAgent?.name)
           : 'Anthropic API';
-      const assistantId = crypto.randomUUID();
+      const assistantId = createClientId();
       const assistantMsg: ChatMessage = {
         id: assistantId,
         role: 'assistant',
@@ -778,7 +779,7 @@ export function ProjectView({
           projectId: project.id,
           conversationId: activeConversationId,
           assistantMessageId: assistantId,
-          clientRequestId: crypto.randomUUID(),
+          clientRequestId: createClientId(),
           skillId: project.skillId ?? null,
           designSystemId: project.designSystemId ?? null,
           attachments: attachments.map((a) => a.path),
