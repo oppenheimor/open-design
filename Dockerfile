@@ -80,4 +80,4 @@ EXPOSE 7456
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD curl -sf http://localhost:7456/api/health || exit 1
 
-CMD ["node", "apps/daemon/dist/cli.js"]
+CMD ["node", "apps/daemon/dist/cli.js", "--no-open"]
