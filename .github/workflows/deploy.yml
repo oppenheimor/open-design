@@ -84,14 +84,10 @@ jobs:
               sleep 2
             done
             echo "Daemon ready"
+            # Use the nginx already installed on the server (avoids Docker Hub access from China)
             mkdir -p /tmp/od-deploy
             docker cp open-design:/app/deploy/nginx/nginx.conf /tmp/od-deploy/nginx.conf
-            docker rm -f nginx 2>/dev/null || true
-            docker run -d \
-              --name nginx \
-              --restart unless-stopped \
-              -p 80:80 \
-              -p 443:443 \
-              -v /tmp/od-deploy/nginx.conf:/etc/nginx/nginx.conf:ro \
-              nginx:alpine
+            service nginx stop || true
+            nginx -c /tmp/od-deploy/nginx.conf
+            service nginx start
             echo "Done"
